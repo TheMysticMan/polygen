@@ -1,0 +1,13 @@
+{{#each Model.NamespaceImports}}
+    using {{this}};
+{{/each}}
+
+namespace {{Model.ClassNamespace}}
+{
+    /// <summary>
+    /// {{Model.ClassComment}}
+    /// </summary>
+    {{Model.ModifiersString}} interface {{Model.ClassName}}{{> Repository/BaseClasses}}
+    {
+    }
+}

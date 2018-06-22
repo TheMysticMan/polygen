@@ -9,9 +9,9 @@ namespace Polygen.Plugins.Base.Models.Namespace.Schema
     /// <summary>
     /// Defines Namespace design model schema.
     /// </summary>
-    public class NamespaceSchema: StageHandlerBase
+    public class NamespaceSchema : StageHandlerBase
     {
-        public NamespaceSchema(): base(StageType.RegisterSchemas, nameof(Namespace))
+        public NamespaceSchema() : base(StageType.RegisterSchemas, nameof(Namespace))
         {
         }
 
@@ -22,16 +22,22 @@ namespace Polygen.Plugins.Base.Models.Namespace.Schema
         public override void Execute()
         {
             // Define the schema elements.
-            var schema = Schemas.AddSchema(BasePluginConstants.DesignModel_SchemaName, BasePluginConstants.DesignModel_SchemaNamespace);
+            var schema = Schemas.AddSchema(BasePluginConstants.DesignModel_SchemaName,
+                BasePluginConstants.DesignModel_SchemaNamespace);
             var stringType = DataTypeRegistry.Get(BasePluginConstants.DataType_string);
 
             schema
                 .CreateRootElement("DesignModels")
-                    .CreateElement("Namespace", "Defines namespace for the design models", c => c.IsMandatory = true)
-                        .CreateAttribute("name", stringType, "Namespace name", c => c.IsMandatory = true);
+                .CreateElement("Namespace", "Defines namespace for the design models", c =>
+                {
+                    c.IsMandatory = true;
+                    c.AllowMultiple = true;
+                })
+                .CreateAttribute("name", stringType, "Namespace name", c => c.IsMandatory = true);
 
             // Register parser.
-            DesignModelConverterFactory.RegisterFactory(schema.RootElement.FindChildElement("Namespace"), new NamespaceParser());
+            DesignModelConverterFactory.RegisterFactory(schema.RootElement.FindChildElement("Namespace"),
+                new NamespaceParser());
         }
     }
 }

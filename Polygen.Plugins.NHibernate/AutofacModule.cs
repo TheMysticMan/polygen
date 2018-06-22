@@ -1,6 +1,8 @@
 ﻿using Autofac;
 using Polygen.Core.Stage;
 using Polygen.Plugins.NHibernate.Output.Backend;
+using Polygen.Plugins.NHibernate.Output.Backend.Entity;
+using Polygen.Plugins.NHibernate.Output.Backend.Repository;
 
 namespace Polygen.Plugins.NHibernate
 {
@@ -25,6 +27,14 @@ namespace Polygen.Plugins.NHibernate
                 .AsSelf()
                 .SingleInstance();
 
+            builder
+                .RegisterType<RepositoryConverter>()
+                .AsSelf()
+                .SingleInstance();
+            builder
+                .RegisterType<RepositoryOutputModelGenerator>()
+                .AsSelf()
+                .SingleInstance();
         }
     }
 }

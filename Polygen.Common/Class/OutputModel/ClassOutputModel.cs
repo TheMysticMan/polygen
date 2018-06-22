@@ -3,6 +3,7 @@ using Polygen.Core.Project;
 using Polygen.Core.Utils;
 using System.Collections.Generic;
 using System.Diagnostics;
+using System.Linq;
 
 namespace Polygen.Common.Class.OutputModel
 {
@@ -16,8 +17,10 @@ namespace Polygen.Common.Class.OutputModel
         private readonly LazyList<Method> _constructorList = new LazyList<Method>();
         private readonly List<Property> _propertyList = new List<Property>();
         private readonly List<Method> _methodList = new List<Method>();
+        private readonly List<BaseClass> _baseClasses = new List<BaseClass>();
 
-        public ClassOutputModel(string type, INamespace ns, IDesignModel designModel, IProjectFile file = null) : base(type, ns, designModel, file)
+        public ClassOutputModel(string type, INamespace ns, IDesignModel designModel, IProjectFile file = null) : base(
+            type, ns, designModel, file)
         {
         }
 
@@ -34,5 +37,7 @@ namespace Polygen.Common.Class.OutputModel
         public List<Method> Methods => this._methodList;
 
         public string ModifiersString => string.Join(" ", this._modifierList);
+        public List<BaseClass> BaseClasses => _baseClasses;
+        public bool HasBaseClasses => BaseClasses.Any();
     }
 }

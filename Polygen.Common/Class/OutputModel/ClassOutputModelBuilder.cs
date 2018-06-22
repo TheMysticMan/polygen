@@ -5,6 +5,7 @@ using Polygen.Core.NamingConvention;
 using Polygen.Core.OutputConfiguration;
 using Polygen.Core.Template;
 using System;
+using System.Collections.Generic;
 using Polygen.Core.OutputModel;
 
 namespace Polygen.Common.Class.OutputModel
@@ -88,6 +89,14 @@ namespace Polygen.Common.Class.OutputModel
             return this;
         }
 
+        public ClassOutputModelBuilder AddBaseClass(string name, List<string> genericTypeArgs)
+        {
+            CheckOutputModel();
+            _outputModel.BaseClasses.Add(new BaseClass(name, genericTypeArgs));
+
+            return this;
+        }
+        
         public ClassOutputModel Build()
         {
             var res = _outputModel;

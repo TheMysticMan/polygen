@@ -1,0 +1,2 @@
+{{~#if Model.HasBaseClasses~}}
+: {{#Model.BaseClasses}}{{Name}}{{> Repository/GenericTypeArgs}}{{/Model.BaseClasses}}{{~/if~}}

@@ -3,6 +3,7 @@ using Polygen.Core.OutputModel;
 using Polygen.Core.Project;
 using Polygen.Core.Stage;
 using Polygen.Plugins.NHibernate.Output.Backend;
+using Polygen.Plugins.NHibernate.Output.Backend.Entity;
 
 namespace Polygen.Plugins.NHibernate.StageHandler
 {

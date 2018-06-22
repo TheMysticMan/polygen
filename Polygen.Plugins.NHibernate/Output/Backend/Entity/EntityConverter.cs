@@ -4,7 +4,7 @@ using Polygen.Core.Exceptions;
 using Polygen.Core.OutputModel;
 using Polygen.Core.Template;
 
-namespace Polygen.Plugins.NHibernate.Output.Backend
+namespace Polygen.Plugins.NHibernate.Output.Backend.Entity
 {
     /// <summary>
     /// Converts entities into backend output model.

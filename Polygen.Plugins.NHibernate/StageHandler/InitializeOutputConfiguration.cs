@@ -32,8 +32,9 @@ namespace Polygen.Plugins.NHibernate.StageHandler
             mainOutputConfiguration.RegisterTargetPlatformForDesignModelType(EntityPluginConstants.DesignModelType_Entity, TargetPlatformCollection.GetTargetPlatform("NHibernate"));
             mainOutputConfiguration.RegisterOutputFolder(new Filter(EntityPluginConstants.OutputModelType_Entity_GeneratedClass), dataProject.GetFolder("Entity"));
             mainOutputConfiguration.RegisterOutputFolder(new Filter(EntityPluginConstants.OutputModelType_Entity_CustomClass), dataProject.GetFolder("Entity"));
-
-            mainOutputConfiguration.RegisterOutputFolder(new Filter(EntityPluginConstants.OutputModelType_Entity_CustomClass), dataProject.GetFolder("Entity"));
+            
+            mainOutputConfiguration.RegisterTargetPlatformForDesignModelType(RepositoryPluginConstants.DesignModelType_Repository, TargetPlatformCollection.GetTargetPlatform("NHibernate"));
+            mainOutputConfiguration.RegisterOutputFolder(new Filter(RepositoryPluginConstants.OutputModelType_Repository_Interface), dataProject.GetFolder("Repository"));
         }
     }
 }

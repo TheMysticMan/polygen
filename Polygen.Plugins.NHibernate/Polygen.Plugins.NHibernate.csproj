@@ -10,6 +10,9 @@
     <EmbeddedResource Include="Output\Templates\Entity\Field.hbs" />
     <EmbeddedResource Include="Output\Templates\Entity\GeneratedClass.hbs" />
     <EmbeddedResource Include="Output\Templates\Entity\Property.hbs" />
+    <EmbeddedResource Include="Output\Templates\Repository\BaseClasses.hbs" />
+    <EmbeddedResource Include="Output\Templates\Repository\GenericTypeArgs.hbs" />
+    <EmbeddedResource Include="Output\Templates\Repository\Interface.hbs" />
     <EmbeddedResource Include="Output\Template\**" />
   </ItemGroup>
   <ItemGroup>

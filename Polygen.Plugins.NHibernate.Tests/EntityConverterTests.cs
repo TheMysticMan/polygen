@@ -8,6 +8,7 @@ using Polygen.Plugins.Base;
 using Polygen.Plugins.Base.Models.Entity;
 using Polygen.Plugins.Base.NamingConvention;
 using Polygen.Plugins.NHibernate.Output.Backend;
+using Polygen.Plugins.NHibernate.Output.Backend.Entity;
 using Polygen.Templates.HandlebarsNet;
 using Polygen.TestUtils.DataType;
 using Xunit;
