@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Dynamic;
 using System.IO;
 
 namespace Polygen.Core.Template
@@ -27,6 +28,6 @@ namespace Polygen.Core.Template
         /// </summary>
         /// <param name="data"></param>
         /// <param name="writer"></param>
-        void Render(Dictionary<string, object> data, TextWriter writer);
+        void Render(dynamic data, TextWriter writer);
     }
 }

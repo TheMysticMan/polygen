@@ -2,6 +2,7 @@
 using System.IO;
 using FluentAssertions;
 using HandlebarsDotNet;
+using Polygen.Templates.HandlebarsNet.Helpers;
 using Xunit;
 
 namespace Polygen.Templates.HandlebarsNet.Tests
@@ -34,7 +35,7 @@ namespace Polygen.Templates.HandlebarsNet.Tests
         [Fact]
         public void Test_template_registration_with_partial_include()
         {
-            var collection = new TemplateCollection();
+            var collection = new TemplateCollection(new List<IHandlebarsHelperBase>());
 
             collection.AddTemplate("test", "Hi {{User.Name}}, {{> include/partial}}");
             collection.AddTemplate("include/partial", "Included for {{User.Name}}");

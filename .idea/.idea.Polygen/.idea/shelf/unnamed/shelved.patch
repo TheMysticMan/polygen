@@ -1,0 +1,461 @@
+Index: Polygen.Core/File/IFileMerger.cs
+IDEA additional info:
+Subsystem: com.intellij.openapi.diff.impl.patch.CharsetEP
+<+>UTF-8
+===================================================================
+--- Polygen.Core/File/IFileMerger.cs	(date 1529697050587)
++++ Polygen.Core/File/IFileMerger.cs	(date 1529697050587)
+@@ -0,0 +1,18 @@
++using System.IO;
++
++namespace Polygen.Core.File
++{
++    /// <summary>
++    /// Describes the FileMerger interface
++    /// Used to merge the new generated file with an existing file
++    /// </summary>
++    public interface IFileMerger
++    {
++        /// <summary>
++        /// Merge the src content into de destination file
++        /// </summary>
++        /// <param name="src"></param>
++        /// <param name="dest"></param>
++        void Merge(FileInfo source, FileInfo destination);
++    }
++}
+Index: Polygen.Common/Class/OutputModel/ClassOutputModelBuilder.cs
+IDEA additional info:
+Subsystem: com.intellij.openapi.diff.impl.patch.BaseRevisionTextPatchEP
+<+>using Polygen.Common.Class.Renderer;\r\nusing Polygen.Core.DesignModel;\r\nusing Polygen.Core.Exceptions;\r\nusing Polygen.Core.NamingConvention;\r\nusing Polygen.Core.OutputConfiguration;\r\nusing Polygen.Core.Template;\r\nusing System;\r\n\r\nnamespace Polygen.Common.Class.OutputModel\r\n{\r\n    public class ClassOutputModelBuilder\r\n    {\r\n        private readonly IClassNamingConvention _namingConvention;\r\n        private readonly IDesignModel _designModel;\r\n        private readonly string _outputModelType;\r\n        private ClassOutputModel _outputModel;\r\n\r\n        public ClassOutputModelBuilder(string outputModelType, IDesignModel designModel, IClassNamingConvention namingConvention)\r\n        {\r\n            _namingConvention = namingConvention;\r\n            _designModel = designModel;\r\n            _outputModelType = outputModelType;\r\n        }\r\n\r\n        public ClassOutputModelBuilder CreateClass(string className, INamespace classNamespace = null)\r\n        {\r\n            CreateClassInternal(className, classNamespace, false);\r\n\r\n            return this;\r\n        }\r\n\r\n        public ClassOutputModelBuilder CreatePartialClass(string className, INamespace classNamespace = null)\r\n        {\r\n            CreateClassInternal(className, classNamespace, false);\r\n            _outputModel.Modifiers.Add(Modifiers.Partial);\r\n\r\n            return this;\r\n        }\r\n\r\n        public ClassOutputModelBuilder CreateInterface(string className, INamespace classNamespace = null)\r\n        {\r\n            CreateClassInternal(className, classNamespace, true);\r\n\r\n            return this;\r\n        }\r\n\r\n        private void CreateClassInternal(string className, INamespace classNamespace, bool isInterface)\r\n        {\r\n            classNamespace = classNamespace ?? _designModel?.Namespace;\r\n\r\n            if (classNamespace == null)\r\n            {\r\n                throw new CodeGenerationException(\"Namespace and design model is not set.\");\r\n            }\r\n\r\n            CheckOutputModel(false);\r\n            _outputModel = new ClassOutputModel(_outputModelType, classNamespace, _designModel)\r\n            {\r\n                ClassName = _namingConvention.GetClassName(className, isInterface),\r\n                ClassNamespace = _namingConvention.GetNamespaceName(classNamespace)\r\n            };\r\n            _outputModel.Modifiers.Add(Modifiers.Public);\r\n            _outputModel.NamespaceImports.Add(\"System\");\r\n            _outputModel.NamespaceImports.Add(\"System.Linq\");\r\n        }\r\n\r\n        public ClassOutputModelBuilder CreateProperty(string name, string type, Action<Property> configurator = null)\r\n        {\r\n            CheckOutputModel();\r\n\r\n            var property = new Property(name, type);\r\n\r\n            property.Modifiers.Add(Modifiers.Public);\r\n            _outputModel.Properties.Add(property);\r\n\r\n            configurator?.Invoke(property);\r\n\r\n            return this;\r\n        }\r\n\r\n        public ClassOutputModelBuilder AddAttribute(string name, params ValueTuple<string, object>[] arguments)\r\n        {\r\n            CheckOutputModel();\r\n            _outputModel.Attributes.Add(new Attribute(name, arguments));\r\n\r\n            return this;\r\n        }\r\n\r\n        public ClassOutputModel Build()\r\n        {\r\n            var res = _outputModel;\r\n\r\n            _outputModel = null;\r\n\r\n            return res;\r\n        }\r\n\r\n        public void SetOutputFile(IOutputConfiguration outputConfiguration, IClassNamingConvention namingConvention, string fileExtension)\r\n        {\r\n            CheckOutputModel();\r\n\r\n            var outputFolder = outputConfiguration.GetOutputFolder(_outputModel.Type);\r\n            var outputFile = namingConvention.GetOutputFolderPath(_outputModel.Namespace) + \"/\" + _outputModel.ClassName + fileExtension;\r\n\r\n            _outputModel.File = outputFolder.GetFile(outputFile);\r\n        }\r\n\r\n        public void SetOutputRenderer(ITemplate template)\r\n        {\r\n            CheckOutputModel();\r\n\r\n            _outputModel.Renderer = new ClassOutputModelRenderer(template);\r\n        }\r\n\r\n        private void CheckOutputModel(bool expectSet = true)\r\n        {\r\n            if (expectSet && _outputModel == null)\r\n            {\r\n                throw new CodeGenerationException(\"Output model not set.\");\r\n            }\r\n            else if (!expectSet && _outputModel != null)\r\n            {\r\n                throw new CodeGenerationException(\"Output model already set.\");\r\n            }\r\n        }\r\n    }\r\n}\r\n
+Subsystem: com.intellij.openapi.diff.impl.patch.CharsetEP
+<+>UTF-8
+===================================================================
+--- Polygen.Common/Class/OutputModel/ClassOutputModelBuilder.cs	(revision 06e071d118fbab9df265d8ee58bf8f26206888d5)
++++ Polygen.Common/Class/OutputModel/ClassOutputModelBuilder.cs	(date 1529698098600)
+@@ -5,6 +5,7 @@
+ using Polygen.Core.OutputConfiguration;
+ using Polygen.Core.Template;
+ using System;
++using Polygen.Core.OutputModel;
+ 
+ namespace Polygen.Common.Class.OutputModel
+ {
+@@ -15,7 +16,8 @@
+         private readonly string _outputModelType;
+         private ClassOutputModel _outputModel;
+ 
+-        public ClassOutputModelBuilder(string outputModelType, IDesignModel designModel, IClassNamingConvention namingConvention)
++        public ClassOutputModelBuilder(string outputModelType, IDesignModel designModel,
++            IClassNamingConvention namingConvention)
+         {
+             _namingConvention = namingConvention;
+             _designModel = designModel;
+@@ -95,14 +97,17 @@
+             return res;
+         }
+ 
+-        public void SetOutputFile(IOutputConfiguration outputConfiguration, IClassNamingConvention namingConvention, string fileExtension)
++        public void SetOutputFile(IOutputConfiguration outputConfiguration, IClassNamingConvention namingConvention,
++            string fileExtension, OutputModelMergeMode mergeMode = OutputModelMergeMode.Skip)
+         {
+             CheckOutputModel();
+ 
+             var outputFolder = outputConfiguration.GetOutputFolder(_outputModel.Type);
+-            var outputFile = namingConvention.GetOutputFolderPath(_outputModel.Namespace) + "/" + _outputModel.ClassName + fileExtension;
++            var outputFile = namingConvention.GetOutputFolderPath(_outputModel.Namespace) + "/" +
++                             _outputModel.ClassName + fileExtension;
+ 
+             _outputModel.File = outputFolder.GetFile(outputFile);
++            _outputModel.MergeMode = mergeMode;
+         }
+ 
+         public void SetOutputRenderer(ITemplate template)
+Index: Polygen.Core/Impl/File/SkipFileMerger.cs
+IDEA additional info:
+Subsystem: com.intellij.openapi.diff.impl.patch.CharsetEP
+<+>UTF-8
+===================================================================
+--- Polygen.Core/Impl/File/SkipFileMerger.cs	(date 1529697785333)
++++ Polygen.Core/Impl/File/SkipFileMerger.cs	(date 1529697785333)
+@@ -0,0 +1,25 @@
++using System.IO;
++using Polygen.Core.File;
++
++namespace Polygen.Core.Impl.File
++{
++    /// <summary>
++    /// This filemerger only creates the file if it doesn't exist
++    /// otherwise it is skipped    
++    /// </summary>
++    public class SkipFileMerger: IFileMerger
++    {
++        /// <summary>
++        /// Copy the source to the destination if it doesn't exist
++        /// </summary>
++        /// <param name="source"></param>
++        /// <param name="destination"></param>
++        public void Merge(FileInfo source, FileInfo destination)
++        {
++            if (!destination.Exists)
++            {
++                source.CopyTo(destination.FullName);
++            }
++        }
++    }
++}
+Index: Polygen.Core/Impl/File/FileMergerFactory.cs
+IDEA additional info:
+Subsystem: com.intellij.openapi.diff.impl.patch.CharsetEP
+<+>UTF-8
+===================================================================
+--- Polygen.Core/Impl/File/FileMergerFactory.cs	(date 1529697891522)
++++ Polygen.Core/Impl/File/FileMergerFactory.cs	(date 1529697891522)
+@@ -0,0 +1,36 @@
++using System;
++using Polygen.Core.File;
++using Polygen.Core.OutputModel;
++
++namespace Polygen.Core.Impl.File
++{
++    public class FileMergerFactory
++    {
++        /// <summary>
++        /// Return the FileMerger to use based on the mergemode
++        /// </summary>
++        /// <param name="outputModelMergeMode"></param>
++        /// <returns></returns>
++        /// <exception cref="ArgumentOutOfRangeException"></exception>
++        public static IFileMerger GetForMode(OutputModelMergeMode outputModelMergeMode)
++        {
++            switch (outputModelMergeMode)
++            {
++                case OutputModelMergeMode.Replace:
++                    return new ReplaceFileMerger();
++                    break;
++                case OutputModelMergeMode.Skip:
++                    return new SkipFileMerger();
++                    break;
++                case OutputModelMergeMode.MergeUpdateRegions:
++                    throw new NotImplementedException($"File merger for mode {OutputModelMergeMode.MergeUpdateRegions} is not yet implemented");
++                    break;
++                case OutputModelMergeMode.MergePreserveRegions:
++                    throw new NotImplementedException($"File merger for mode {OutputModelMergeMode.MergePreserveRegions} is not yet implemented");
++                    break;
++                default:
++                    throw new ArgumentOutOfRangeException(nameof(outputModelMergeMode), outputModelMergeMode, null);
++            }
++        }
++    }
++}
+Index: Polygen.Core/Impl/File/ReplaceFileMerger.cs
+IDEA additional info:
+Subsystem: com.intellij.openapi.diff.impl.patch.CharsetEP
+<+>UTF-8
+===================================================================
+--- Polygen.Core/Impl/File/ReplaceFileMerger.cs	(date 1529697849468)
++++ Polygen.Core/Impl/File/ReplaceFileMerger.cs	(date 1529697849468)
+@@ -0,0 +1,21 @@
++using System.IO;
++using Polygen.Core.File;
++
++namespace Polygen.Core.Impl.File
++{
++    /// <summary>
++    /// This filemerger only always copys the source to the destination
++    /// </summary>
++    public class ReplaceFileMerger: IFileMerger
++    {
++        /// <summary>
++        /// Copy the source to the destination 
++        /// </summary>
++        /// <param name="source"></param>
++        /// <param name="destination"></param>
++        public void Merge(FileInfo source, FileInfo destination)
++        {
++            source.CopyTo(destination.FullName, true);
++        }
++    }
++}
+Index: Polygen.Core/Runner.cs
+IDEA additional info:
+Subsystem: com.intellij.openapi.diff.impl.patch.BaseRevisionTextPatchEP
+<+>using System.Collections.Generic;\r\nusing System.IO;\r\nusing System.Linq;\r\nusing Polygen.Core.DataType;\r\nusing Polygen.Core.DesignModel;\r\nusing Polygen.Core.Exceptions;\r\nusing Polygen.Core.Impl;\r\nusing Polygen.Core.Impl.Project;\r\nusing Polygen.Core.NamingConvention;\r\nusing Polygen.Core.OutputModel;\r\nusing Polygen.Core.Parser;\r\nusing Polygen.Core.Project;\r\nusing Polygen.Core.Schema;\r\nusing Polygen.Core.Stage;\r\nusing Polygen.Core.Utils;\r\n\r\nnamespace Polygen.Core\r\n{\r\n    public class Runner\r\n    {\r\n        private readonly ISchemaCollection _schemaCollection;\r\n        private readonly IXmlElementParser _xmlElementParser;\r\n        private readonly IDesignModelParser _designModelParser;\r\n        private readonly Context _context;\r\n        private RunnerConfiguration _configration;\r\n\r\n        public Runner(\r\n            ISchemaCollection schemaCollection,\r\n            IXmlElementParser xmlElementParser,\r\n            IDesignModelParser designModelParser,\r\n            IDesignModelCollection designModelCollection,\r\n            IOutputModelCollection outputModelCollection,\r\n            IStageHandlerRegistry stageHandlers,\r\n            IDataTypeRegistry dataTypeRegistry,\r\n            IEnumerable<IClassNamingConvention> classNamingConventions\r\n        )\r\n        {\r\n            this._schemaCollection = schemaCollection;\r\n            this._xmlElementParser = xmlElementParser;\r\n            this._designModelParser = designModelParser;\r\n\r\n            this._context = new Context\r\n            {\r\n                Schemas = schemaCollection,\r\n                DesignModels = designModelCollection,\r\n                OutputModels = outputModelCollection,\r\n                DataTypeRegistry = dataTypeRegistry,\r\n                MainOutputConfiguration = designModelCollection.RootNamespace.OutputConfiguration,\r\n                StageHandlers = stageHandlers\r\n            };\r\n        }\r\n\r\n        public IContext Context => this._context;\r\n\r\n        /// <summary>\r\n        /// Runs the code generation process.\r\n        /// </summary>\r\n        /// <param name=\"config\"></param>\r\n        public virtual void Execute(RunnerConfiguration config)\r\n        {\r\n            this._configration = config;\r\n\r\n            this.Initialize();\r\n            this.RegisterSchemas();\r\n            this.ParseProjectConfiguration(config.ProjectConfigurationFile);\r\n            this.RegisterTemplates();\r\n            this.ConfigureTargetPlatforms();\r\n            this.InitializeOutputConfiguration();\r\n            this.ParseInputXmlFilesFiles();\r\n            this.ParseDesignModels();\r\n            this.ApplyProjectLayout();\r\n            this.GenerateOutputModels();\r\n            this.WriteOutputFiles(config.TempFolder);\r\n            this.CopyOutputFilesToProjectFolders();\r\n            this.Cleanup();\r\n        }\r\n\r\n        /// <summary>\r\n        /// Initializes the code generation framework.\r\n        /// </summary>\r\n        public virtual void Initialize()\r\n        {\r\n            // Indicate that the context has been initialize.\r\n            this.FireStageEvent(StageType.Initialize);\r\n        }\r\n\r\n        /// <summary>\r\n        /// Registers all needed schemas. Those are usually defined by plugins.\r\n        /// </summary>\r\n        public virtual void RegisterSchemas()\r\n        {\r\n            // Fire the generic event.\r\n            this.FireStageEvent(StageType.RegisterSchemas);\r\n        }\r\n\r\n        /// <summary>\r\n        /// Parses the ProjectConfiguration.xml file.\r\n        /// </summary>\r\n        /// <param name=\"projectConfigurationFile\"></param>\r\n        public virtual void ParseProjectConfiguration(string projectConfigurationFile)\r\n        {\r\n            this.FireStageEvent(StageType.BeforeParseProjectConfiguration);\r\n\r\n            var schema = this._schemaCollection.GetSchemaByNamespace(CoreConstants.ProjectConfiguration_SchemaNamespace);\r\n\r\n            using (var reader = File.OpenText(projectConfigurationFile))\r\n            {\r\n                var dummyProject = new Impl.Project.Project(\"init\", \"init\", Path.GetDirectoryName(projectConfigurationFile));\r\n                var dummyProjectFile = new ProjectFile(dummyProject, Path.GetFileName(projectConfigurationFile));\r\n                var projectConfigurationElement = this._xmlElementParser.Parse(reader, schema, dummyProjectFile);\r\n\r\n                this._designModelParser.Parse(projectConfigurationElement, this._context.DesignModels);\r\n\r\n                var parsedDesignModel = this._context.DesignModels.GetByType(CoreConstants.DesignModelType_ProjectConfiguration).FirstOrDefault();\r\n\r\n                if (parsedDesignModel == null)\r\n                {\r\n                    throw new ConfigurationException(\"No project configuration design model found.\");\r\n                }\r\n\r\n                var projectConfiguration = parsedDesignModel as IProjectConfiguration;\r\n\r\n                this._context.Configuration = projectConfiguration ?? throw new ConfigurationException(\"Project configuration object must implement interface IProjectConfiguration\");\r\n                this._context.Projects = projectConfiguration.Projects;\r\n            }\r\n\r\n            this.FireStageEvent(StageType.AfterParseProjectConfiguration);\r\n            this.FireStageEvent(StageType.ValidateProjectConfiguration);\r\n        }\r\n\r\n        /// <summary>\r\n        /// Plugins register all their templates.\r\n        /// </summary>\r\n        public virtual void RegisterTemplates()\r\n        {\r\n            this.FireStageEvent(StageType.RegisterTemplates);\r\n        }\r\n\r\n        /// <summary>\r\n        /// Plugins register all supported target platforms.\r\n        /// </summary>\r\n        public virtual void ConfigureTargetPlatforms()\r\n        {\r\n            this.FireStageEvent(StageType.ConfigureTargetPlatforms);\r\n        }\r\n\r\n        /// <summary>\r\n        /// Registers all needed output templates and output folders. Those are usually defined by plugins.\r\n        /// </summary>\r\n        public virtual void InitializeOutputConfiguration()\r\n        {\r\n            this.FireStageEvent(StageType.InitializeOutputConfiguration);\r\n        }\r\n\r\n        /// <summary>\r\n        /// Parses all XML files into IXmlElement objects.\r\n        /// </summary>\r\n        public virtual void ParseInputXmlFilesFiles()\r\n        {\r\n            this.FireStageEvent(StageType.BeforeParseInputXmlFiles);\r\n            this.FireStageEvent(StageType.ParseInputXmlFiles);\r\n            this.FireStageEvent(StageType.AfterParseInputXmlFiles);\r\n        }\r\n\r\n        /// <summary>\r\n        /// Parses all design model elements into design models.\r\n        /// </summary>\r\n        /// <param name=\"designModelFiles\"></param>\r\n        public virtual void ParseDesignModels()\r\n        {\r\n            this.FireStageEvent(StageType.BeforeParseDesignModels);\r\n            this.FireStageEvent(StageType.ParseDesignModels);\r\n            this.FireStageEvent(StageType.AfterParseDesignModels);\r\n        }\r\n\r\n        /// <summary>\r\n        /// Applies the project layout configuration to all parsed design models.\r\n        /// </summary>\r\n        public virtual void ApplyProjectLayout()\r\n        {\r\n            this.FireStageEvent(StageType.ApplyProjectLayout);\r\n        }\r\n\r\n        /// <summary>\r\n        /// Notifies plugins that they should generate IOutputModel objects from the design models.\r\n        /// </summary>\r\n        public void GenerateOutputModels()\r\n        {\r\n            this.FireStageEvent(StageType.BeforeGenerateOutputModels);\r\n            this.FireStageEvent(StageType.GenerateOutputModels);\r\n            this.FireStageEvent(StageType.AfterOutputModelsGenerated);\r\n        }\r\n\r\n        /// <summary>\r\n        /// Writes the output models into file system.\r\n        /// </summary>\r\n        /// <param name=\"outputFolder\"></param>\r\n        public void WriteOutputFiles(string outputFolder)\r\n        {\r\n            foreach (var project in this._context.Projects.Projects)\r\n            {\r\n                ((Impl.Project.Project)project).SetTempFolder(Path.Combine(outputFolder, project.Name));\r\n            }\r\n\r\n            this.FireStageEvent(StageType.BeforeWriteOutputFiles);\r\n\r\n            foreach (var outputModel in this._context.OutputModels.Models)\r\n            {\r\n                if (outputModel.File == null)\r\n                {\r\n                    throw new OutputModelException(outputModel, \"Output file is not set.\");\r\n                }\r\n\r\n                if (outputModel.Renderer == null)\r\n                {\r\n                    throw new OutputModelException(outputModel, \"Output model render not set.\");\r\n                }\r\n\r\n                using (var writer = outputModel.File.OpenAsTextForWriting())\r\n                {\r\n                    outputModel.Renderer.Render(outputModel, writer);\r\n                }\r\n            }\r\n\r\n            this.FireStageEvent(StageType.AfterWriteOutputFiles);\r\n        }\r\n\r\n        /// <summary>\r\n        /// Copies output model files from the temporary folder to the project folders.\r\n        /// Existing files are skipped, overwritten or merged depending on the output model type.\r\n        /// </summary>\r\n        public void CopyOutputFilesToProjectFolders()\r\n        {\r\n            this.FireStageEvent(StageType.BeforeCopyOutputFiles);\r\n\r\n            foreach (var outputModel in this._context.OutputModels.Models)\r\n            {\r\n                if (outputModel.File == null)\r\n                {\r\n                    throw new OutputModelException(outputModel, \"Output file is not set.\");\r\n                }\r\n\r\n                var projectFile = outputModel.File.GetSourcePath(true);\r\n                var projectFileDir = Path.GetDirectoryName(projectFile);\r\n\r\n                if (!Directory.Exists(projectFileDir))\r\n                {\r\n                    Directory.CreateDirectory(projectFileDir);\r\n                }\r\n\r\n                File.Copy(outputModel.File.GetTempPath(true), projectFile);\r\n            }\r\n\r\n            this.FireStageEvent(StageType.AfterCopyOutputFiles);\r\n        }\r\n\r\n        /// <summary>\r\n        /// Cleans up the code generation data.\r\n        /// </summary>\r\n        public void Cleanup()\r\n        {\r\n            this.FireStageEvent(StageType.Cleanup);\r\n            this.FireStageEvent(StageType.Finished);\r\n        }\r\n\r\n        /// <summary>\r\n        /// Calls all registered handlers for the given stage.\r\n        /// </summary>\r\n        /// <param name=\"stage\"></param>\r\n        private void FireStageEvent(StageType stage)\r\n        {\r\n            foreach (var handler in this._context.StageHandlers.GetHandlers(stage))\r\n            {\r\n                handler.Execute();\r\n            }\r\n        }\r\n    }\r\n}\r\n
+Subsystem: com.intellij.openapi.diff.impl.patch.CharsetEP
+<+>UTF-8
+===================================================================
+--- Polygen.Core/Runner.cs	(revision 06e071d118fbab9df265d8ee58bf8f26206888d5)
++++ Polygen.Core/Runner.cs	(date 1529697893935)
+@@ -5,6 +5,7 @@
+ using Polygen.Core.DesignModel;
+ using Polygen.Core.Exceptions;
+ using Polygen.Core.Impl;
++using Polygen.Core.Impl.File;
+ using Polygen.Core.Impl.Project;
+ using Polygen.Core.NamingConvention;
+ using Polygen.Core.OutputModel;
+@@ -103,7 +104,7 @@
+ 
+             var schema = this._schemaCollection.GetSchemaByNamespace(CoreConstants.ProjectConfiguration_SchemaNamespace);
+ 
+-            using (var reader = File.OpenText(projectConfigurationFile))
++            using (var reader = System.IO.File.OpenText(projectConfigurationFile))
+             {
+                 var dummyProject = new Impl.Project.Project("init", "init", Path.GetDirectoryName(projectConfigurationFile));
+                 var dummyProjectFile = new ProjectFile(dummyProject, Path.GetFileName(projectConfigurationFile));
+@@ -248,7 +249,11 @@
+                     Directory.CreateDirectory(projectFileDir);
+                 }
+ 
+-                File.Copy(outputModel.File.GetTempPath(true), projectFile);
++                // TODO: Merge files
++                var sourceFile = new FileInfo(outputModel.File.GetTempPath(true));
++                var destinationFile = new FileInfo(projectFile);
++                var fileMerger = FileMergerFactory.GetForMode(outputModel.MergeMode);
++                fileMerger.Merge(sourceFile, destinationFile);
+             }
+ 
+             this.FireStageEvent(StageType.AfterCopyOutputFiles);
+Index: Polygen.Core/Impl/OutputModel/OutputModelBase.cs
+IDEA additional info:
+Subsystem: com.intellij.openapi.diff.impl.patch.BaseRevisionTextPatchEP
+<+>using Polygen.Core.DesignModel;\r\nusing Polygen.Core.OutputConfiguration;\r\nusing Polygen.Core.OutputModel;\r\nusing Polygen.Core.Project;\r\nusing Polygen.Core.Renderer;\r\nusing System.Collections.Generic;\r\n\r\nnamespace Polygen.Core.Impl.OutputModel\r\n{\r\n    /// <summary>\r\n    /// Base class for output models. Can also be used as a container for generic output models.\r\n    /// </summary>\r\n    public class OutputModelBase : IOutputModel\r\n    {\r\n        private IEnumerable<IOutputModelFragment> _fragments;\r\n\r\n        public OutputModelBase(string type, INamespace ns, IDesignModel designModel = null, IProjectFile file = null)\r\n        {\r\n            this.Type = type;\r\n            this.Namespace = ns;\r\n            this.DesignModel = designModel;\r\n            this.File = file;\r\n            this.OutputConfiguration = new OutputConfiguration.OutputConfiguration(this.Namespace?.OutputConfiguration);\r\n        }\r\n\r\n        public string Type { get; set; }\r\n        public IDesignModel DesignModel { get; set; }\r\n        public INamespace Namespace { get; set; }\r\n        public IProjectFile File { get; set; }\r\n        public IOutputModelRenderer Renderer { get; set; }\r\n        public IEnumerable<IOutputModelFragment> Fragments => this._fragments ?? (this._fragments = new List<IOutputModelFragment>());\r\n        public IOutputConfiguration OutputConfiguration { get; }\r\n    }\r\n}\r\n
+Subsystem: com.intellij.openapi.diff.impl.patch.CharsetEP
+<+>UTF-8
+===================================================================
+--- Polygen.Core/Impl/OutputModel/OutputModelBase.cs	(revision 06e071d118fbab9df265d8ee58bf8f26206888d5)
++++ Polygen.Core/Impl/OutputModel/OutputModelBase.cs	(date 1529697961718)
+@@ -14,21 +14,27 @@
+     {
+         private IEnumerable<IOutputModelFragment> _fragments;
+ 
+-        public OutputModelBase(string type, INamespace ns, IDesignModel designModel = null, IProjectFile file = null)
++        public OutputModelBase(string type, INamespace ns, IDesignModel designModel = null, IProjectFile file = null,
++            OutputModelMergeMode mergeMode = OutputModelMergeMode.Skip)
+         {
+             this.Type = type;
+             this.Namespace = ns;
+             this.DesignModel = designModel;
+             this.File = file;
+             this.OutputConfiguration = new OutputConfiguration.OutputConfiguration(this.Namespace?.OutputConfiguration);
++            this.MergeMode = mergeMode;
+         }
+ 
+         public string Type { get; set; }
+         public IDesignModel DesignModel { get; set; }
+         public INamespace Namespace { get; set; }
+         public IProjectFile File { get; set; }
++        public OutputModelMergeMode MergeMode { get; set; }
+         public IOutputModelRenderer Renderer { get; set; }
+-        public IEnumerable<IOutputModelFragment> Fragments => this._fragments ?? (this._fragments = new List<IOutputModelFragment>());
++
++        public IEnumerable<IOutputModelFragment> Fragments =>
++            this._fragments ?? (this._fragments = new List<IOutputModelFragment>());
++
+         public IOutputConfiguration OutputConfiguration { get; }
+     }
+ }
+Index: Polygen.Core/OutputModel/IOutputModel.cs
+IDEA additional info:
+Subsystem: com.intellij.openapi.diff.impl.patch.BaseRevisionTextPatchEP
+<+>using Polygen.Core.DesignModel;\r\nusing Polygen.Core.OutputConfiguration;\r\nusing Polygen.Core.Project;\r\nusing Polygen.Core.Renderer;\r\nusing System.Collections.Generic;\r\n\r\nnamespace Polygen.Core.OutputModel\r\n{\r\n    /// <summary>\r\n    /// Inteface for a output data created from design models. This will be used to generate an\r\n    /// output file using a content renderer.\r\n    /// </summary>\r\n    public interface IOutputModel\r\n    {\r\n        /// <summary>\r\n        /// Defines the output model type.\r\n        /// </summary>\r\n        string Type { get; }\r\n        /// <summary>\r\n        /// The namespace this output model belongs to. Usually this is the design model namespace.\r\n        /// </summary>\r\n        INamespace Namespace { get; }\r\n        /// <summary>\r\n        /// Design model this output model is based one. Can be null.\r\n        /// </summary>\r\n        IDesignModel DesignModel { get; }\r\n        /// <summary>\r\n        /// Output configuration to be used by this output model.\r\n        /// </summary>\r\n        IOutputConfiguration OutputConfiguration { get; }\r\n        /// <summary>\r\n        /// Output file which will be created from this model.\r\n        /// </summary>\r\n        IProjectFile File { get; set; }\r\n        /// <summary>\r\n        /// Determines how the output model file will be copied to the project.\r\n        /// </summary>\r\n        //OutputModelMergeMode MergeMode { get; set; }\r\n        /// <summary>\r\n        /// Renderer for this output model. Can be changed by plugins.\r\n        /// </summary>\r\n        IOutputModelRenderer Renderer { get; set; }\r\n        /// <summary>\r\n        /// Contains the output fragments. These are passed to the output fragment renderer.\r\n        /// </summary>\r\n        IEnumerable<IOutputModelFragment> Fragments { get; }\r\n    }\r\n}\r\n
+Subsystem: com.intellij.openapi.diff.impl.patch.CharsetEP
+<+>UTF-8
+===================================================================
+--- Polygen.Core/OutputModel/IOutputModel.cs	(revision 06e071d118fbab9df265d8ee58bf8f26206888d5)
++++ Polygen.Core/OutputModel/IOutputModel.cs	(date 1529697343578)
+@@ -3,6 +3,7 @@
+ using Polygen.Core.Project;
+ using Polygen.Core.Renderer;
+ using System.Collections.Generic;
++using Polygen.Core.File;
+ 
+ namespace Polygen.Core.OutputModel
+ {
+@@ -16,30 +17,36 @@
+         /// Defines the output model type.
+         /// </summary>
+         string Type { get; }
++
+         /// <summary>
+         /// The namespace this output model belongs to. Usually this is the design model namespace.
+         /// </summary>
+         INamespace Namespace { get; }
++
+         /// <summary>
+         /// Design model this output model is based one. Can be null.
+         /// </summary>
+         IDesignModel DesignModel { get; }
++
+         /// <summary>
+         /// Output configuration to be used by this output model.
+         /// </summary>
+         IOutputConfiguration OutputConfiguration { get; }
++
+         /// <summary>
+         /// Output file which will be created from this model.
+         /// </summary>
+         IProjectFile File { get; set; }
++
+         /// <summary>
+         /// Determines how the output model file will be copied to the project.
+         /// </summary>
+-        //OutputModelMergeMode MergeMode { get; set; }
++        OutputModelMergeMode MergeMode { get; set; }
+         /// <summary>
+         /// Renderer for this output model. Can be changed by plugins.
+         /// </summary>
+         IOutputModelRenderer Renderer { get; set; }
++
+         /// <summary>
+         /// Contains the output fragments. These are passed to the output fragment renderer.
+         /// </summary>
+Index: Polygen.Plugins.NHibernate/Output/Backend/EntityConverter.cs
+IDEA additional info:
+Subsystem: com.intellij.openapi.diff.impl.patch.BaseRevisionTextPatchEP
+<+>using System.Linq;\nusing Polygen.Common.Class.OutputModel;\nusing Polygen.Core.Exceptions;\nusing Polygen.Core.Template;\n\nnamespace Polygen.Plugins.NHibernate.Output.Backend\n{\n    /// <summary>\n    /// Converts entities into backend output model.\n    /// </summary>\n    public class EntityConverter\n    {\n        private ITemplateCollection _templateCollection;\n\n        public EntityConverter(ITemplateCollection templateCollection)\n        {\n            _templateCollection = templateCollection;\n        }\n\n        public ClassOutputModel CreateEntityGeneratedClass(Base.Models.Entity.Entity entity, string language)\n        {\n\n            var targetPlatform = entity.OutputConfiguration.GetTargetPlatformsForDesignModel(entity).FirstOrDefault();\n\n            if (targetPlatform == null)\n            {\n                throw new ConfigurationException($\"No target platforms defined for design model type '{entity.DesignModelType}'.\");\n            }\n\n            var namingConvention = targetPlatform.GetClassNamingConvention(language);\n            var outputModelType = EntityPluginConstants.OutputModelType_Entity_GeneratedClass;\n            var builder = new ClassOutputModelBuilder(outputModelType, entity, namingConvention);\n\n            builder.CreatePartialClass(entity.Name, entity.Namespace);\n            builder.SetOutputFile(entity.OutputConfiguration, namingConvention, fileExtension: \".gen.cs\");\n            builder.SetOutputRenderer(targetPlatform.GetOutputTemplate(outputModelType));\n\n            foreach (var entityAttribute in entity.Attributes)\n            {\n                builder.CreateProperty(entityAttribute.Name, namingConvention.GetTypeName(entityAttribute.Type));\n            }\n\n            return builder.Build();\n        }\n\n        public ClassOutputModel CreateEntityCustomClass(Base.Models.Entity.Entity entity, string language)\n        {\n            var targetPlatform = entity.OutputConfiguration.GetTargetPlatformsForDesignModel(entity).FirstOrDefault();\n\n            if (targetPlatform == null)\n            {\n                throw new ConfigurationException($\"No target platforms defined for design model type '{entity.DesignModelType}'.\");\n            }\n\n            var namingConvention = targetPlatform.GetClassNamingConvention(language);\n            var outputModelType = EntityPluginConstants.OutputModelType_Entity_CustomClass;\n            var builder = new ClassOutputModelBuilder(outputModelType, entity, namingConvention);\n\n            builder.CreatePartialClass(entity.Name, entity.Namespace);\n            builder.SetOutputFile(entity.OutputConfiguration, namingConvention, fileExtension: \".cs\");\n            builder.SetOutputRenderer(targetPlatform.GetOutputTemplate(outputModelType));\n\n            return builder.Build();\n        }\n    }\n}\n
+Subsystem: com.intellij.openapi.diff.impl.patch.CharsetEP
+<+>UTF-8
+===================================================================
+--- Polygen.Plugins.NHibernate/Output/Backend/EntityConverter.cs	(revision 06e071d118fbab9df265d8ee58bf8f26206888d5)
++++ Polygen.Plugins.NHibernate/Output/Backend/EntityConverter.cs	(date 1529698132839)
+@@ -1,6 +1,7 @@
+ using System.Linq;
+ using Polygen.Common.Class.OutputModel;
+ using Polygen.Core.Exceptions;
++using Polygen.Core.OutputModel;
+ using Polygen.Core.Template;
+ 
+ namespace Polygen.Plugins.NHibernate.Output.Backend
+@@ -19,12 +20,12 @@
+ 
+         public ClassOutputModel CreateEntityGeneratedClass(Base.Models.Entity.Entity entity, string language)
+         {
+-
+             var targetPlatform = entity.OutputConfiguration.GetTargetPlatformsForDesignModel(entity).FirstOrDefault();
+ 
+             if (targetPlatform == null)
+             {
+-                throw new ConfigurationException($"No target platforms defined for design model type '{entity.DesignModelType}'.");
++                throw new ConfigurationException(
++                    $"No target platforms defined for design model type '{entity.DesignModelType}'.");
+             }
+ 
+             var namingConvention = targetPlatform.GetClassNamingConvention(language);
+@@ -32,7 +33,8 @@
+             var builder = new ClassOutputModelBuilder(outputModelType, entity, namingConvention);
+ 
+             builder.CreatePartialClass(entity.Name, entity.Namespace);
+-            builder.SetOutputFile(entity.OutputConfiguration, namingConvention, fileExtension: ".gen.cs");
++            builder.SetOutputFile(entity.OutputConfiguration, namingConvention, fileExtension: ".gen.cs",
++                mergeMode: OutputModelMergeMode.Replace);
+             builder.SetOutputRenderer(targetPlatform.GetOutputTemplate(outputModelType));
+ 
+             foreach (var entityAttribute in entity.Attributes)
+@@ -49,7 +51,8 @@
+ 
+             if (targetPlatform == null)
+             {
+-                throw new ConfigurationException($"No target platforms defined for design model type '{entity.DesignModelType}'.");
++                throw new ConfigurationException(
++                    $"No target platforms defined for design model type '{entity.DesignModelType}'.");
+             }
+ 
+             var namingConvention = targetPlatform.GetClassNamingConvention(language);
+Index: Polygen.Core/Impl/Project/ProjectFile.cs
+IDEA additional info:
+Subsystem: com.intellij.openapi.diff.impl.patch.BaseRevisionTextPatchEP
+<+>using Polygen.Core.Project;\r\nusing System.IO;\r\nusing System.Text;\r\nusing System.Diagnostics;\r\n\r\nnamespace Polygen.Core.Impl.Project\r\n{\r\n    [DebuggerDisplay(\"ProjectFile: Source: {_sourcePath}, Temp: {_tempPath}\")]\r\n    public class ProjectFile : ProjectFileSystemEntryBase, IProjectFile\r\n    {\r\n        public ProjectFile(string path) : base(path, false)\r\n        {\r\n        }\r\n\r\n        public ProjectFile(IProject project, string relativePath) : base(project, relativePath, false)\r\n        {\r\n        }\r\n\r\n        public TextReader OpenAsTextForReading()\r\n        {\r\n            return new StreamReader(File.Open(this.GetSourcePath(true), FileMode.Open), Encoding.UTF8);\r\n        }\r\n\r\n        public TextWriter OpenAsTextForWriting()\r\n        {\r\n            var path = this.GetTempPath(true);\r\n            var dir = Path.GetDirectoryName(path);\r\n\r\n            if (!Directory.Exists(dir))\r\n            {\r\n                Directory.CreateDirectory(dir);\r\n            }\r\n\r\n            return new StreamWriter(File.Open(path, FileMode.Create), Encoding.UTF8);\r\n        }\r\n\r\n        public string ReadText()\r\n        {\r\n            using (var reader = this.OpenAsTextForReading())\r\n            {\r\n                return reader.ReadToEnd();\r\n            }\r\n        }\r\n\r\n        public void WriteText(string text)\r\n        {\r\n            using (var writer = this.OpenAsTextForWriting())\r\n            {\r\n                writer.Write(text);\r\n            }\r\n        }\r\n    }\r\n}\r\n
+Subsystem: com.intellij.openapi.diff.impl.patch.CharsetEP
+<+>UTF-8
+===================================================================
+--- Polygen.Core/Impl/Project/ProjectFile.cs	(revision 06e071d118fbab9df265d8ee58bf8f26206888d5)
++++ Polygen.Core/Impl/Project/ProjectFile.cs	(date 1529697989823)
+@@ -18,7 +18,7 @@
+ 
+         public TextReader OpenAsTextForReading()
+         {
+-            return new StreamReader(File.Open(this.GetSourcePath(true), FileMode.Open), Encoding.UTF8);
++            return new StreamReader(System.IO.File.Open(this.GetSourcePath(true), FileMode.Open), Encoding.UTF8);
+         }
+ 
+         public TextWriter OpenAsTextForWriting()
+@@ -31,7 +31,7 @@
+                 Directory.CreateDirectory(dir);
+             }
+ 
+-            return new StreamWriter(File.Open(path, FileMode.Create), Encoding.UTF8);
++            return new StreamWriter(System.IO.File.Open(path, FileMode.Create), Encoding.UTF8);
+         }
+ 
+         public string ReadText()
+Index: Polygen.Plugins.NHibernate/Output/Templates/Entity/Property.hbs
+IDEA additional info:
+Subsystem: com.intellij.openapi.diff.impl.patch.BaseRevisionTextPatchEP
+<+>/// <summary>\n/// {{Documentation}}\n/// </summary>\n{{ModifiersString}} {{Type.TypeName}} {{Name}} { get; set; }
+Subsystem: com.intellij.openapi.diff.impl.patch.CharsetEP
+<+>UTF-8
+===================================================================
+--- Polygen.Plugins.NHibernate/Output/Templates/Entity/Property.hbs	(revision 06e071d118fbab9df265d8ee58bf8f26206888d5)
++++ Polygen.Plugins.NHibernate/Output/Templates/Entity/Property.hbs	(date 1529609561194)
+@@ -1,4 +1,4 @@
+ /// <summary>
+ /// {{Documentation}}
+ /// </summary>
+-{{ModifiersString}} {{Type.TypeName}} {{Name}} { get; set; }
+\ No newline at end of file
++{{ModifiersString}} {{Type.TypeName}} {{Name}} { get; set; }
+Index: Polygen.Plugins.Base/Models/Entity/Schema/EntityAttributeSchema.cs
+IDEA additional info:
+Subsystem: com.intellij.openapi.diff.impl.patch.BaseRevisionTextPatchEP
+<+>using Polygen.Core.DataType;\nusing Polygen.Core.Parser;\nusing Polygen.Core.Schema;\nusing Polygen.Core.Stage;\nusing Polygen.Plugins.Base.Models.Entity.Parser;\n\nnamespace Polygen.Plugins.Base.Models.Entity.Schema\n{\n    /// <summary>\n    /// Defines EntityAttribute design model schema.\n    /// </summary>\n    public class EntityAttributeSchema: StageHandlerBase\n    {\n        public EntityAttributeSchema(): base(StageType.RegisterSchemas, nameof(EntityAttributeSchema), nameof(EntitySchema))\n        {\n        }\n\n        public ISchemaCollection Schemas { get; set; }\n        public IDesignModelGeneratorFactory DesignModelConverterFactory { get; set; }\n        public IDataTypeRegistry DataTypeRegistry { get; set; }\n\n        public override void Execute()\n        {\n            // Define the schema elements.\n            var schema = Schemas.GetSchemaByNamespace(BasePluginConstants.DesignModel_SchemaNamespace);\n            var stringType = DataTypeRegistry.Get(BasePluginConstants.DataType_string);\n\n            var entityDesignModelElement = schema.RootElement.FindChildElement(\"Namespace/Entity\");\n\n            entityDesignModelElement.GetBuilder()\n                .CreateAttribute(\"name\", stringType, \"Entity name\", c => c.IsMandatory = true)\n                .CreateElement(\"Attribute\", \"Defines an entity attribute\")\n                .CreateAttribute(\"name\", stringType, \"Attribute name\", c => c.IsMandatory = true)\n                .CreateAttribute(\"type\", stringType, \"Attribute type\", c => c.IsMandatory = true);\n\n            var designModelElement = entityDesignModelElement.FindChildElement(\"Attribute\");\n\n            // Register parser.\n            DesignModelConverterFactory.RegisterFactory(designModelElement, new EntityAttributeParser(DataTypeRegistry));\n        }\n    }\n}\n
+Subsystem: com.intellij.openapi.diff.impl.patch.CharsetEP
+<+>UTF-8
+===================================================================
+--- Polygen.Plugins.Base/Models/Entity/Schema/EntityAttributeSchema.cs	(revision 06e071d118fbab9df265d8ee58bf8f26206888d5)
++++ Polygen.Plugins.Base/Models/Entity/Schema/EntityAttributeSchema.cs	(date 1529696179938)
+@@ -29,7 +29,7 @@
+ 
+             entityDesignModelElement.GetBuilder()
+                 .CreateAttribute("name", stringType, "Entity name", c => c.IsMandatory = true)
+-                .CreateElement("Attribute", "Defines an entity attribute")
++                .CreateElement("Attribute", "Defines an entity attribute", c => c.AllowMultiple = true)
+                 .CreateAttribute("name", stringType, "Attribute name", c => c.IsMandatory = true)
+                 .CreateAttribute("type", stringType, "Attribute type", c => c.IsMandatory = true);
+ 
+Index: Polygen.Plugins.Base/Models/Entity/Schema/EntitySchema.cs
+IDEA additional info:
+Subsystem: com.intellij.openapi.diff.impl.patch.BaseRevisionTextPatchEP
+<+>using Polygen.Core.DataType;\nusing Polygen.Core.Parser;\nusing Polygen.Core.Schema;\nusing Polygen.Core.Stage;\nusing Polygen.Plugins.Base.Models.Entity.Parser;\n\nnamespace Polygen.Plugins.Base.Models.Entity.Schema\n{\n    /// <summary>\n    /// Defines Entity design model schema.\n    /// </summary>\n    public class EntitySchema: StageHandlerBase\n    {\n        public EntitySchema(): base(StageType.RegisterSchemas, nameof(EntitySchema))\n        {\n        }\n\n        public ISchemaCollection Schemas { get; set; }\n        public IDesignModelGeneratorFactory DesignModelConverterFactory { get; set; }\n\n        public override void Execute()\n        {\n            // Define the schema elements.\n            var schema = Schemas.GetSchemaByNamespace(BasePluginConstants.DesignModel_SchemaNamespace);\n\n            schema\n                .RootElement\n                .FindChildElement(\"Namespace\")\n                .GetBuilder()\n                .CreateElement(\"Entity\", \"Defines an entity which is the root design model\");\n\n            // Register parser.\n            var designModelElement = schema.RootElement.FindChildElement(\"Namespace/Entity\");\n\n            DesignModelConverterFactory.RegisterFactory(designModelElement, new EntityParser());\n        }\n    }\n}\n
+Subsystem: com.intellij.openapi.diff.impl.patch.CharsetEP
+<+>UTF-8
+===================================================================
+--- Polygen.Plugins.Base/Models/Entity/Schema/EntitySchema.cs	(revision 06e071d118fbab9df265d8ee58bf8f26206888d5)
++++ Polygen.Plugins.Base/Models/Entity/Schema/EntitySchema.cs	(date 1529695889741)
+@@ -27,7 +27,7 @@
+                 .RootElement
+                 .FindChildElement("Namespace")
+                 .GetBuilder()
+-                .CreateElement("Entity", "Defines an entity which is the root design model");
++                .CreateElement("Entity", "Defines an entity which is the root design model", c => c.AllowMultiple = true);
+ 
+             // Register parser.
+             var designModelElement = schema.RootElement.FindChildElement("Namespace/Entity");
+Index: Polygen.TestUtils/TempFolder.cs
+IDEA additional info:
+Subsystem: com.intellij.openapi.diff.impl.patch.BaseRevisionTextPatchEP
+<+>using System;\r\nusing System.Collections.Generic;\r\nusing System.IO;\r\nusing System.Linq;\r\nusing System.Text;\r\nusing System.Threading.Tasks;\r\n\r\nnamespace Polygen.Core.Tests\r\n{\r\n    public class TempFolder: IDisposable\r\n    {\r\n        private string _tempFolder;\r\n        private string _baseFolder;\r\n\r\n        public TempFolder(string baseFolderName = \"Polygen\")\r\n        {\r\n            this._baseFolder = Path.Combine(Path.GetTempPath(), baseFolderName);\r\n        }\r\n\r\n        public string GetRootPath()\r\n        {\r\n            if (this._tempFolder == null)\r\n            {\r\n                this._tempFolder = Path.Combine(this._baseFolder, Guid.NewGuid().ToString().Replace(\"-\", \"\"));\r\n                Directory.CreateDirectory(this._tempFolder);\r\n            }\r\n\r\n            return this._tempFolder;\r\n        }\r\n\r\n        public string GetPath(string path)\r\n        {\r\n            return Path.GetFullPath(Path.Combine(this.GetRootPath(), path));\r\n        }\r\n\r\n        public void Dispose()\r\n        {\r\n            if (this._tempFolder != null)\r\n            {\r\n                Directory.Delete(this._tempFolder, true);\r\n                this._tempFolder = null;\r\n            }\r\n        }\r\n\r\n        public string CreateFolder(string dirPath)\r\n        {\r\n            dirPath = this.GetPath(dirPath);\r\n\r\n            if (!Directory.Exists(dirPath))\r\n            {\r\n                Directory.CreateDirectory(dirPath);\r\n            }\r\n\r\n            return dirPath;\r\n        }\r\n\r\n        public TextWriter OpenTextFileForWriting(string filePath)\r\n        {\r\n            filePath = this.GetPath(filePath);\r\n\r\n            var dirPath = Path.GetDirectoryName(filePath);\r\n\r\n            if (!string.IsNullOrWhiteSpace(dirPath) && !Directory.Exists(dirPath))\r\n            {\r\n                Directory.CreateDirectory(dirPath);\r\n            }\r\n\r\n            return new StreamWriter(File.Open(filePath, FileMode.Create), Encoding.UTF8);\r\n        }\r\n\r\n        public void CreateWriteTextFile(string filePath, string text)\r\n        {\r\n            using (var writer = this.OpenTextFileForWriting(filePath))\r\n            {\r\n                writer.Write(text);\r\n            }\r\n        }\r\n\r\n        // https://stackoverflow.com/questions/58744/copy-the-entire-contents-of-a-directory-in-c-sharp\r\n        public void CopyFrom(string sourceDir)\r\n        {\r\n            void CopyAll(DirectoryInfo source, DirectoryInfo target)\r\n            {\r\n                Directory.CreateDirectory(target.FullName);\r\n\r\n                // Copy each file into the new directory.\r\n                foreach (var fi in source.GetFiles())\r\n                {\r\n                    fi.CopyTo(Path.Combine(target.FullName, fi.Name), true);\r\n                }\r\n\r\n                // Copy each subdirectory using recursion.\r\n                foreach (var diSourceSubDir in source.GetDirectories())\r\n                {\r\n                    var nextTargetSubDir = target.CreateSubdirectory(diSourceSubDir.Name);\r\n\r\n                    CopyAll(diSourceSubDir, nextTargetSubDir);\r\n                }\r\n            }\r\n\r\n            CopyAll(new DirectoryInfo(sourceDir), new DirectoryInfo(this.GetRootPath()));\r\n        }\r\n    }\r\n}\r\n
+Subsystem: com.intellij.openapi.diff.impl.patch.CharsetEP
+<+>UTF-8
+===================================================================
+--- Polygen.TestUtils/TempFolder.cs	(revision 06e071d118fbab9df265d8ee58bf8f26206888d5)
++++ Polygen.TestUtils/TempFolder.cs	(date 1529698021878)
+@@ -65,7 +65,7 @@
+                 Directory.CreateDirectory(dirPath);
+             }
+ 
+-            return new StreamWriter(File.Open(filePath, FileMode.Create), Encoding.UTF8);
++            return new StreamWriter(System.IO.File.Open(filePath, FileMode.Create), Encoding.UTF8);
+         }
+ 
+         public void CreateWriteTextFile(string filePath, string text)

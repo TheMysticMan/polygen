@@ -29,10 +29,7 @@ namespace Polygen.Common.Class.Renderer
 
             try
             {
-                var data = new Dictionary<string, object>()
-                {
-                    { "Model", classOutputModel }
-                };
+                dynamic data = classOutputModel;
 
                 this._template.Render(data, writer);
             }

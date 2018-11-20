@@ -1,0 +1,11 @@
+﻿<Project Sdk="Microsoft.NET.Sdk">
+    <PropertyGroup>
+        <TargetFramework>netcoreapp2.0</TargetFramework>
+    </PropertyGroup>
+    <ItemGroup>
+        <ProjectReference Include="..\Polygen.Core\Polygen.Core.csproj"/>
+    </ItemGroup>
+    <ItemGroup>
+        <PackageReference Include="RazorLight" Version="2.0.0-beta1"/>
+    </ItemGroup>
+</Project>

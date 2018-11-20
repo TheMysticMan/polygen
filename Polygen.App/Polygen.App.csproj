@@ -2,6 +2,7 @@
   <PropertyGroup>
     <OutputType>Exe</OutputType>
     <TargetFramework>netcoreapp2.0</TargetFramework>
+    <PreserveCompilationContext>true</PreserveCompilationContext>
   </PropertyGroup>
   <ItemGroup>
     <PackageReference Include="JetBrains.Annotations" Version="11.1.0" />
@@ -11,7 +12,8 @@
     <ProjectReference Include="..\Polygen.Common\Polygen.Common.csproj" />
     <ProjectReference Include="..\Polygen.Core\Polygen.Core.csproj" />
     <ProjectReference Include="..\Polygen.Plugins.Base\Polygen.Plugins.Base.csproj" />
+    <ProjectReference Include="..\Polygen.Plugins.HandlebarsHelpers.CSharp\Polygen.Plugins.HandlebarsHelpers.CSharp.csproj" />
     <ProjectReference Include="..\Polygen.Plugins.NHibernate\Polygen.Plugins.NHibernate.csproj" />
-    <ProjectReference Include="..\Polygen.Templates.HandlebarsNet\Polygen.Templates.HandlebarsNet.csproj" />
+    <ProjectReference Include="..\Polygen.Templates.Razor\Polygen.Templates.Razor.csproj" />
   </ItemGroup>
 </Project>

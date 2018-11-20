@@ -1,0 +1,7 @@
+﻿@model Polygen.Common.Class.OutputModel.ClassOutputModel
+@{
+DisableEncoding = true;
+}
+@foreach(var import in Model.NamespaceImports) {
+<text>using </text> @import <text>;</text> @System.Environment.NewLine
+}

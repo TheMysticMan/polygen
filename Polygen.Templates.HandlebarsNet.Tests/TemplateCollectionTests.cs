@@ -1,5 +1,7 @@
-﻿using Polygen.Core.Tests;
+﻿using System.Collections.Generic;
+using Polygen.Core.Tests;
 using FluentAssertions;
+using Polygen.Templates.HandlebarsNet.Helpers;
 using Xunit;
 
 namespace Polygen.Templates.HandlebarsNet.Tests
@@ -9,7 +11,7 @@ namespace Polygen.Templates.HandlebarsNet.Tests
         [Fact]
         public void Test_template_registration()
         {
-            var collection = new TemplateCollection();
+            var collection = new TemplateCollection(new List<IHandlebarsHelperBase>());
 
             collection.AddTemplate("test", "Hi {{User.Name}}");
 
@@ -31,7 +33,7 @@ namespace Polygen.Templates.HandlebarsNet.Tests
         {
             using (var tempFolder = new TempFolder())
             {
-                var collection = new TemplateCollection();
+                var collection = new TemplateCollection(new List<IHandlebarsHelperBase>());
 
                 tempFolder.CreateWriteTextFile("template-a.hbs", "Contents A");
                 tempFolder.CreateWriteTextFile("folder/template-b.hbs", "Contents B");
@@ -51,7 +53,7 @@ namespace Polygen.Templates.HandlebarsNet.Tests
         {
             using (var tempFolder = new TempFolder())
             {
-                var collection = new TemplateCollection();
+                var collection = new TemplateCollection(new List<IHandlebarsHelperBase>());
 
                 tempFolder.CreateWriteTextFile("folder/template-a.hbs", "Contents A");
                 collection.LoadTemplates(new[] { tempFolder.GetRootPath() });
@@ -69,7 +71,7 @@ namespace Polygen.Templates.HandlebarsNet.Tests
         {
             using (var tempFolder = new TempFolder())
             {
-                var collection = new TemplateCollection();
+                var collection = new TemplateCollection(new List<IHandlebarsHelperBase>());
 
                 tempFolder.CreateWriteTextFile("folder1/template-a.hbs", "Contents A");
                 tempFolder.CreateWriteTextFile("folder2/template-a.hbs", "Contents B");

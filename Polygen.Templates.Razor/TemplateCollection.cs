@@ -1,56 +1,28 @@
-using Polygen.Core.Exceptions;
-using Polygen.Core.Template;
-using Polygen.Core.Utils;
-using HandlebarsDotNet;
 using System.Collections.Generic;
 using System.IO;
 using System.Reflection;
-using System;
-using System.Linq;
 using System.Text.RegularExpressions;
-using System.Text;
-using Polygen.Templates.HandlebarsNet.Helpers;
+using Polygen.Core.Exceptions;
+using Polygen.Core.Template;
+using Polygen.Core.Utils;
+using RazorLight;
 
-namespace Polygen.Templates.HandlebarsNet
+namespace Polygen.Templates.Razor
 {
     public class TemplateCollection : ITemplateCollection
     {
         private Dictionary<string, Template> _templateMap = new Dictionary<string, Template>();
 
-        public TemplateCollection(IEnumerable<IHandlebarsHelperBase> helpers)
-        {
-            var config = new HandlebarsConfiguration
-            {
-                // Not yet available. Uncomment later.
-                //ThrowOnUnresolvedBindingExpression = true,
-                TextEncoder = new NoopTextEncoder()
-            };
-
-            this.Instance = Handlebars.Create(config);
-
-            // register helpers
-            foreach (var h in helpers)
-            {
-                switch (h)
-                {
-                    case IHandlebarsBlockHelper blockHelper:
-                        Instance.RegisterHelper(blockHelper.Name, blockHelper.BlockHelper);
-                        break;
-                    case IHandlebarsHelper helper:
-                        Instance.RegisterHelper(helper.Name, helper.Helper);
-                        break;
-                }
-            }
-        }
-
         public TemplateCollection()
-        {
-            throw new NotImplementedException();
+        {   
+            this.Instance = new RazorLightEngineBuilder()
+                .UseMemoryCachingProvider()
+                .Build();
         }
 
-        public IHandlebars Instance { get; }
+        public IRazorLightEngine Instance { get; }
 
-        public ITemplate GetTemplate(string name, bool throwIfMissing = true)
+        public Polygen.Core.Template.ITemplate GetTemplate(string name, bool throwIfMissing = true)
         {
             if (!this._templateMap.TryGetValue(name, out var template) && throwIfMissing)
             {
@@ -106,7 +78,7 @@ namespace Polygen.Templates.HandlebarsNet
                     var contents = default(string);
 
                     using (var stream = assembly.GetManifestResourceStream(resourceName))
-                    using (var reader = new StreamReader(stream, Encoding.UTF8))
+                    using (var reader = new StreamReader(stream, System.Text.Encoding.UTF8))
                     {
                         contents = reader.ReadToEnd();
                     }
@@ -119,7 +91,7 @@ namespace Polygen.Templates.HandlebarsNet
             }
         }
 
-        public void RegisterTemplate(ITemplate template, bool overrideExisting = false)
+        public void RegisterTemplate(Polygen.Core.Template.ITemplate template, bool overrideExisting = false)
         {
             var internalTemplate = template as Template;
 
@@ -141,8 +113,8 @@ namespace Polygen.Templates.HandlebarsNet
             }
 
             this._templateMap.Add(internalTemplate.Name, internalTemplate);
-            this.Instance.RegisterTemplate(internalTemplate.Name,
-                (writer, data) => { internalTemplate.GetRenderFn().Invoke(writer, data); });
+            /*this.Instance.RegisterTemplate(internalTemplate.Name,
+                (writer, data) => { internalTemplate.GetRenderFn().Invoke(writer, data); });*/
         }
     }
 }

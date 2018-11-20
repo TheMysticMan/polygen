@@ -10,13 +10,11 @@
     <EmbeddedResource Include="Output\Templates\Entity\Field.hbs" />
     <EmbeddedResource Include="Output\Templates\Entity\GeneratedClass.hbs" />
     <EmbeddedResource Include="Output\Templates\Entity\Property.hbs" />
-    <EmbeddedResource Include="Output\Templates\Repository\BaseClasses.hbs" />
-    <EmbeddedResource Include="Output\Templates\Repository\GenericTypeArgs.hbs" />
     <EmbeddedResource Include="Output\Templates\Repository\Interface.hbs" />
     <EmbeddedResource Include="Output\Template\**" />
   </ItemGroup>
   <ItemGroup>
-    <PackageReference Include="Autofac" Version="4.4.0" />
+    <PackageReference Include="Autofac" Version="4.8.1" />
     <PackageReference Include="System.ValueTuple" Version="4.3.0" />
   </ItemGroup>
   <ItemGroup>

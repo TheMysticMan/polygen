@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.IO;
+using System.Linq;
 using System.Reflection;
 using Autofac;
 using Microsoft.Extensions.CommandLineUtils;
@@ -33,7 +34,8 @@ namespace Polygen.App
             var pluginAssemblies = new List<Assembly>
             {
                 Assembly.Load(new AssemblyName("Polygen.Plugins.Base")),
-                Assembly.Load(new AssemblyName("Polygen.Plugins.NHibernate"))
+                Assembly.Load(new AssemblyName("Polygen.Plugins.NHibernate")),
+                Assembly.Load(new AssemblyName("Polygen.Plugins.HandlebarsHelpers.CSharp"))
             };
 
             return pluginAssemblies;
@@ -44,9 +46,9 @@ namespace Polygen.App
             var builder = new ContainerBuilder();
 
             builder.RegisterModule(new Core.AutofacModule());
-            builder.RegisterModule(new Templates.HandlebarsNet.AutofacModule());
+            builder.RegisterModule(new Templates.Razor.AutofacModule());            
             builder.RegisterAssemblyModules(pluginAssemblies.ToArray());
-
+            
             builder
                 .RegisterType<Core.Runner>()
                 .As<Core.Runner>()
