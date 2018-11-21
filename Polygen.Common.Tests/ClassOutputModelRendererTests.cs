@@ -1,11 +1,11 @@
 ﻿using Polygen.Common.Class.OutputModel;
 using Polygen.Common.Class.Renderer;
 using Polygen.Core.Impl.DesignModel;
-using Polygen.Templates.HandlebarsNet;
 using Polygen.TestUtils.NamingConvention;
 using FluentAssertions;
-using HandlebarsDotNet;
 using System.IO;
+using Polygen.Templates.Razor;
+using RazorLight;
 using Xunit;
 
 namespace Polygen.Common.Tests
@@ -22,17 +22,22 @@ namespace Polygen.Common.Tests
             builder.CreateProperty("Name", "string");
 
             var outputModel = builder.Build();
-            var instance = Handlebars.Create(new HandlebarsConfiguration
-            {
-                TextEncoder = new NoopTextEncoder()
-            });
+            var instance = new RazorLightEngineBuilder()
+                .UseMemoryCachingProvider()
+                .Build();
+            
             var template = new Template("test", instance, TemplateSource.CreateForText(@"
-namespace {{Model.ClassNamespace}}
-public class {{Model.ClassName}}
+@model Polygen.Common.Class.OutputModel.ClassOutputModel
+@{
+DisableEncoding = true;
+}
+namespace @Model.ClassNamespace
+public class @Model.ClassName
 {
-{{#each Model.Properties}}
-    public {{Type.TypeName}} {{Name}} { get; set; }
-{{/each}}
+@foreach(var prop in Model.Properties) {
+<text>    public @prop.Type.TypeName @prop.Name { get; set; }
+</text>
+}
 }
 "));
             var renderer = new ClassOutputModelRenderer(template);

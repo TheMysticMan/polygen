@@ -12,7 +12,6 @@
     <ProjectReference Include="..\Polygen.Common\Polygen.Common.csproj" />
     <ProjectReference Include="..\Polygen.Core\Polygen.Core.csproj" />
     <ProjectReference Include="..\Polygen.Plugins.Base\Polygen.Plugins.Base.csproj" />
-    <ProjectReference Include="..\Polygen.Plugins.HandlebarsHelpers.CSharp\Polygen.Plugins.HandlebarsHelpers.CSharp.csproj" />
     <ProjectReference Include="..\Polygen.Plugins.NHibernate\Polygen.Plugins.NHibernate.csproj" />
     <ProjectReference Include="..\Polygen.Templates.Razor\Polygen.Templates.Razor.csproj" />
   </ItemGroup>

@@ -43,7 +43,7 @@ namespace Polygen.Templates.Razor
         {
             foreach (var folder in folders)
             {
-                foreach (var file in Directory.EnumerateFiles(folder, "*.hbs", SearchOption.AllDirectories))
+                foreach (var file in Directory.EnumerateFiles(folder, "*.cshtml", SearchOption.AllDirectories))
                 {
                     var templateDir = PathUtils.GetRelativePath(folder, Path.GetDirectoryName(file)).Replace("\\", "/");
                     var templateName = Path.GetFileNameWithoutExtension(file);
@@ -62,7 +62,7 @@ namespace Polygen.Templates.Razor
 
         public void LoadTemplates(params Assembly[] assemblies)
         {
-            var pattern = new Regex(@"^.*\.Templates\.(.+)\.hbs$", RegexOptions.IgnoreCase);
+            var pattern = new Regex(@"^.*\.Templates\.(.+)\.cshtml", RegexOptions.IgnoreCase);
 
             foreach (var assembly in assemblies)
             {

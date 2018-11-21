@@ -1,6 +1,7 @@
 ﻿<Project Sdk="Microsoft.NET.Sdk">
   <PropertyGroup>
     <TargetFramework>netcoreapp2.0</TargetFramework>
+      <PreserveCompilationContext>true</PreserveCompilationContext>
   </PropertyGroup>
   <ItemGroup>
     <PackageReference Include="FluentAssertions" Version="5.3.0" />
@@ -12,7 +13,8 @@
   </ItemGroup>
   <ItemGroup>
     <ProjectReference Include="..\Polygen.Common\Polygen.Common.csproj" />
-    <ProjectReference Include="..\Polygen.Templates.HandlebarsNet\Polygen.Templates.HandlebarsNet.csproj" />
+    <ProjectReference Include="..\Polygen.Plugins.NHibernate\Polygen.Plugins.NHibernate.csproj" />
+    <ProjectReference Include="..\Polygen.Templates.Razor\Polygen.Templates.Razor.csproj" />
     <ProjectReference Include="..\Polygen.TestUtils\Polygen.TestUtils.csproj" />
   </ItemGroup>
   <ItemGroup>

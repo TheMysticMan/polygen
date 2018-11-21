@@ -38,7 +38,7 @@ namespace Polygen.Plugins.NHibernate.Tests
 ");
 
                 var outputFolder = tempFolder.CreateFolder("output");
-                var runner = TestRunner.Create(new Core.AutofacModule(), new Base.AutofacModule(), new Templates.HandlebarsNet.AutofacModule(), new AutofacModule());
+                var runner = TestRunner.Create(new Core.AutofacModule(), new Base.AutofacModule(), new Templates.Razor.AutofacModule(), new AutofacModule());
 
                 runner.Execute(new Core.RunnerConfiguration
                 {

@@ -1,7 +1,27 @@
 ﻿@model Polygen.Common.Class.OutputModel.ClassOutputModel
 @{
-DisableEncoding = true;
+    DisableEncoding = true;
 }
-@foreach(var import in Model.NamespaceImports) {
-<text>using </text> @import <text>;</text> @System.Environment.NewLine
+@foreach (var import in Model.NamespaceImports)
+{
+    <text>  
+        using @import
+    </text>
+}
+
+namespace @Model.ClassNamespace
+{
+    /// <summary>
+    /// Model.ClassComment
+    /// </summary>
+@Model.ModifiersString class @Model.ClassName
+{
+@foreach (var field in @Model.Fields)
+{
+     await IncludeAsync("Field.cshtml", field);
+}
+@foreach (var property in @Model.Properties)
+{
+     await IncludeAsync("Entity/Property.cshtml", property);
+}
 }

@@ -1,5 +1,4 @@
-﻿using System.Collections.Generic;
-using System.Linq;
+﻿using System.Linq;
 using FluentAssertions;
 using Polygen.Core.Impl.DesignModel;
 using Polygen.Core.Impl.Project;
@@ -8,10 +7,8 @@ using Polygen.Core.Utils;
 using Polygen.Plugins.Base;
 using Polygen.Plugins.Base.Models.Entity;
 using Polygen.Plugins.Base.NamingConvention;
-using Polygen.Plugins.NHibernate.Output.Backend;
 using Polygen.Plugins.NHibernate.Output.Backend.Entity;
-using Polygen.Templates.HandlebarsNet;
-using Polygen.Templates.HandlebarsNet.Helpers;
+using Polygen.Templates.Razor;
 using Polygen.TestUtils.DataType;
 using Xunit;
 
@@ -74,7 +71,7 @@ namespace Polygen.Plugins.NHibernate.Tests
             entity.OutputConfiguration.RegisterOutputFolder(new Filter(EntityPluginConstants.OutputModelType_Entity_CustomClass), new ProjectFolder(""));
             entity.OutputConfiguration.RegisterTargetPlatformForDesignModelType(entity.DesignModelType, targetPlatform);
 
-            var templateCollection = new TemplateCollection(new List<IHandlebarsHelperBase>());
+            var templateCollection = new TemplateCollection();
 
             templateCollection.LoadTemplates(typeof(EntityPluginConstants).Assembly);
 
